@@ -1,0 +1,25 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import joblib
+import numpy as np
+
+app = Flask(__name__)
+CORS(app)
+model = joblib.load("model.pkl")
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    data = request.get_json()
+    alcohol_ml = float(data.get("alcohol_ml", 0))
+    weight_lbs = float(data.get("weight_lbs", 0))
+    hours = float(data.get("hours", 0))
+    gender = data.get("gender", "male").lower()
+    
+    gender_binary = 1 if gender == "male" else 0
+    features = np.array([[alcohol_ml, weight_lbs, hours, gender_binary]])
+    bac = model.predict(features)[0]
+    
+    return jsonify({"BAC": round(bac, 4)})
+
+if __name__ == "__main__":
+    app.run(debug=True)
